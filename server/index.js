@@ -226,6 +226,95 @@ app.post('/api/subjects/:subject/modules/:module/chapters/:chapter/sections/:sec
   }
 });
 
+// Add a subject/module/chapter/section/topic by submitting a dummy card (for hierarchy creation)
+app.post('/api/submit-raw', auth, async (req, res) => {
+  try {
+    const { subject, module, chapter, section, topic, rawText } = req.body;
+    if (!subject || !rawText) {
+      return res.status(400).json({ error: 'subject and rawText are required' });
+    }
+    const card = new Card({
+      subject,
+      module,
+      chapter,
+      section,
+      topic,
+      content: rawText,
+      keywords: [],
+      createdBy: req.userId,
+      reviewSchedule: {
+        currentStage: 0,
+        log: []
+      }
+    });
+    await card.save();
+    res.status(201).json(card);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to submit raw data', details: err.message });
+  }
+});
+
+// PATCH: Rename a module
+app.patch('/api/subjects/:subject/modules/:oldModule', auth, async (req, res) => {
+  try {
+    const { newName } = req.body;
+    if (!newName) return res.status(400).json({ error: 'newName is required' });
+    const result = await Card.updateMany(
+      { subject: req.params.subject, module: req.params.oldModule, createdBy: req.userId },
+      { $set: { module: newName } }
+    );
+    res.json({ success: true, modifiedCount: result.modifiedCount });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to rename module', details: err.message });
+  }
+});
+
+// PATCH: Rename a chapter
+app.patch('/api/subjects/:subject/modules/:module/chapters/:oldChapter', auth, async (req, res) => {
+  try {
+    const { newName } = req.body;
+    if (!newName) return res.status(400).json({ error: 'newName is required' });
+    const result = await Card.updateMany(
+      { subject: req.params.subject, module: req.params.module, chapter: req.params.oldChapter, createdBy: req.userId },
+      { $set: { chapter: newName } }
+    );
+    res.json({ success: true, modifiedCount: result.modifiedCount });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to rename chapter', details: err.message });
+  }
+});
+
+// PATCH: Rename a section
+app.patch('/api/subjects/:subject/modules/:module/chapters/:chapter/sections/:oldSection', auth, async (req, res) => {
+  try {
+    const { newName } = req.body;
+    if (!newName) return res.status(400).json({ error: 'newName is required' });
+    const result = await Card.updateMany(
+      { subject: req.params.subject, module: req.params.module, chapter: req.params.chapter, section: req.params.oldSection, createdBy: req.userId },
+      { $set: { section: newName } }
+    );
+    res.json({ success: true, modifiedCount: result.modifiedCount });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to rename section', details: err.message });
+  }
+});
+
+// PATCH: Rename a topic
+app.patch('/api/subjects/:subject/modules/:module/chapters/:chapter/sections/:section/topics/:oldTopic', auth, async (req, res) => {
+  try {
+    const { newName } = req.body;
+    if (!newName) return res.status(400).json({ error: 'newName is required' });
+    const result = await Card.updateMany(
+      { subject: req.params.subject, module: req.params.module, chapter: req.params.chapter, section: req.params.section, topic: req.params.oldTopic, createdBy: req.userId },
+      { $set: { topic: newName } }
+    );
+    res.json({ success: true, modifiedCount: result.modifiedCount });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to rename topic', details: err.message });
+  }
+});
+
+
 // --- API: Get forgotten blanks for a card (per user) ---
 app.get('/api/cards/:cardId/blanks', auth, async (req, res) => {
   try {

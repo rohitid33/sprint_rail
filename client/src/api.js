@@ -90,6 +90,42 @@ export const addTopic = async (subject, module, chapter, section, topic) => {
   });
   return res.data;
 };
+
+// Rename a module
+export const renameModule = async (subject, oldModule, newName) => {
+  const res = await axios.patch(`${API_BASE_URL}/subjects/${encodeURIComponent(subject)}/modules/${encodeURIComponent(oldModule)}`,
+    { newName },
+    { headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` } }
+  );
+  return res.data;
+};
+
+// Rename a chapter
+export const renameChapter = async (subject, module, oldChapter, newName) => {
+  const res = await axios.patch(`${API_BASE_URL}/subjects/${encodeURIComponent(subject)}/modules/${encodeURIComponent(module)}/chapters/${encodeURIComponent(oldChapter)}`,
+    { newName },
+    { headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` } }
+  );
+  return res.data;
+};
+
+// Rename a section
+export const renameSection = async (subject, module, chapter, oldSection, newName) => {
+  const res = await axios.patch(`${API_BASE_URL}/subjects/${encodeURIComponent(subject)}/modules/${encodeURIComponent(module)}/chapters/${encodeURIComponent(chapter)}/sections/${encodeURIComponent(oldSection)}`,
+    { newName },
+    { headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` } }
+  );
+  return res.data;
+};
+
+// Rename a topic
+export const renameTopic = async (subject, module, chapter, section, oldTopic, newName) => {
+  const res = await axios.patch(`${API_BASE_URL}/subjects/${encodeURIComponent(subject)}/modules/${encodeURIComponent(module)}/chapters/${encodeURIComponent(chapter)}/sections/${encodeURIComponent(section)}/topics/${encodeURIComponent(oldTopic)}`,
+    { newName },
+    { headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` } }
+  );
+  return res.data;
+};
 export const fetchModules = async (subject) => {
   const res = await axios.get(`${API_BASE_URL}/subjects/${encodeURIComponent(subject)}/modules`, {
     headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` }

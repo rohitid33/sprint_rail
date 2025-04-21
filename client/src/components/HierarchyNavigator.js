@@ -50,6 +50,10 @@ const levelConfig = [
 ];
 
 export default function HierarchyNavigator() {
+  // ...existing state
+  const [renameDialog, setRenameDialog] = useState({ open: false, oldName: '', idx: null, newName: '' });
+  // ...existing state
+
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [newItem, setNewItem] = useState("");
   const [adding, setAdding] = useState(false);
@@ -108,6 +112,31 @@ export default function HierarchyNavigator() {
   if (topicDetail) {
     return <TopicDetail {...topicDetail} onBack={() => setTopicDetail(null)} />;
   }
+
+  // Helper for calling the correct rename API
+  const handleRename = async (oldName, newName) => {
+    try {
+      if (!newName || newName === oldName) return;
+      if (label === 'Module') {
+        await require('../api').renameModule(params.subject, oldName, newName);
+      } else if (label === 'Chapter') {
+        await require('../api').renameChapter(params.subject, params.module, oldName, newName);
+      } else if (label === 'Section') {
+        await require('../api').renameSection(params.subject, params.module, params.chapter, oldName, newName);
+      } else if (label === 'Topic') {
+        await require('../api').renameTopic(params.subject, params.module, params.chapter, params.section, oldName, newName);
+      } else {
+        throw new Error('Renaming not supported for this level');
+      }
+      queryClient.invalidateQueries(queryKey);
+      setSnackbarMessage(`${label} renamed successfully!`);
+      setSnackbarSeverity('success');
+    } catch (err) {
+      setSnackbarMessage(err?.response?.data?.error || `Failed to rename ${label}`);
+      setSnackbarSeverity('error');
+    }
+    setRenameDialog({ open: false, oldName: '', idx: null, newName: '' });
+  };
 
   return (
     <>
@@ -175,6 +204,20 @@ export default function HierarchyNavigator() {
                     <Typography variant="subtitle1" sx={{ fontWeight: 500, flexGrow: 1 }}>
                       {typeof item === 'string' ? item : item.content || item._id}
                     </Typography>
+                    {/* Edit (rename) button */}
+                    {label !== 'Card' && (
+                      <IconButton
+                        size="small"
+                        color="primary"
+                        onClick={e => {
+                          e.stopPropagation();
+                          setRenameDialog({ open: true, oldName: item, idx });
+                        }}
+                        aria-label={`Rename ${label}`}
+                      >
+                        <span role="img" aria-label="edit">✏️</span>
+                      </IconButton>
+                    )}
                     <IconButton 
                       size="small" 
                       color="error" 
@@ -322,6 +365,27 @@ export default function HierarchyNavigator() {
           >
             {deleting ? 'Deleting...' : 'Delete'}
           </Button>
+        </DialogActions>
+      </Dialog>
+      {/* Rename dialog */}
+      <Dialog open={renameDialog.open} onClose={() => setRenameDialog({ open: false, oldName: '', idx: null, newName: '' })}>
+        <DialogTitle>Rename {label}</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label={`New ${label} Name`}
+            fullWidth
+            value={renameDialog.newName || renameDialog.oldName}
+            onChange={e => setRenameDialog(rd => ({ ...rd, newName: e.target.value }))}
+            onKeyDown={e => {
+              if (e.key === 'Enter') handleRename(renameDialog.oldName, renameDialog.newName || renameDialog.oldName);
+            }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRenameDialog({ open: false, oldName: '', idx: null, newName: '' })}>Cancel</Button>
+          <Button onClick={() => handleRename(renameDialog.oldName, renameDialog.newName || renameDialog.oldName)} variant="contained">Rename</Button>
         </DialogActions>
       </Dialog>
     </>
